@@ -22,6 +22,8 @@ export function TaskFormPage({ task, initialDate }: TaskFormPageProps) {
   const { addTask, updateTask, deleteTask } = useTasks();
   const isEdit = !!task;
 
+  const isCompleted = task?.completed;
+
   const { formData, updateField, validate, getSubmitData } = useTaskForm(task, initialDate);
 
   // 弹窗状态
@@ -31,6 +33,7 @@ export function TaskFormPage({ task, initialDate }: TaskFormPageProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
+  const [titleError, setTitleError] = useState('');
 
   const frequencyLabels: Record<string, string> = {
     once: '不重复',
@@ -52,9 +55,10 @@ export function TaskFormPage({ task, initialDate }: TaskFormPageProps) {
     if (submitting) return;
 
     if (!validate()) {
-      alert('请填写任务标题');
+      setTitleError('请填写任务标题');
       return;
     }
+    setTitleError('');
 
     setSubmitting(true);
 
@@ -123,10 +127,20 @@ export function TaskFormPage({ task, initialDate }: TaskFormPageProps) {
             <input
               type="text"
               value={formData.title}
-              onChange={(e) => updateField('title', e.target.value)}
+              onChange={(e) => {
+                updateField('title', e.target.value)
+                if (titleError) setTitleError('');
+              }}
               placeholder="例如：背单词、复习笔记..."
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+              className={`w-full px-4 py-3 rounded-xl border bg-gray-50 focus:bg-white focus:ring-2 outline-none transition-all ${
+                titleError
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-100'
+                  : 'border-gray-200 focus:border-blue-500 focus:ring-blue-100'
+              }`}
             />
+            {titleError && (
+              <p className="text-xs text-red-500 mt-1 ml-1">{titleError}</p>
+            )}
           </div>
 
           {/* 频率 */}
@@ -233,9 +247,12 @@ export function TaskFormPage({ task, initialDate }: TaskFormPageProps) {
           <div className="pt-4 space-y-3">
             <button
               onClick={handleSubmit}
-              className="w-full rounded-xl bg-blue-600 py-3.5 text-white font-medium hover:bg-blue-700 transition-colors shadow-sm"
+              disabled={isCompleted}
+              className={`w-full rounded-xl bg-blue-600 py-3.5 text-white font-medium transition-colors shadow-sm ${
+                isCompleted ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+              }`}
             >
-              {isEdit ? '保存修改' : '创建任务'}
+              {isCompleted ? '已完成任务不可修改' : isEdit ? '保存修改' : '创建任务'}
             </button>
 
             {isEdit && (

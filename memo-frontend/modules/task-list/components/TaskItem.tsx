@@ -32,11 +32,12 @@ export function TaskItem({ task, onToggleComplete }: TaskItemProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span
-              className={`font-medium ${
+              className={`font-medium truncate ${
                 task.completed ? 'text-gray-400 line-through' : 'text-gray-900'
               }`}
             >
               {task.title}
+              {task.learningContent && ` · ${task.learningContent}`}
             </span>
           </div>
           {task.notes && (

@@ -47,6 +47,7 @@ export function useTasks(initialDate?: string) {
     await refreshTasks();
   }, [refreshTasks]);
 
+  // 可删
   const toggleComplete = useCallback(async (id: string) => {
     const task = tasks.find((t) => t.id === id);
     if (!task) return;
@@ -93,6 +94,14 @@ export function useTasks(initialDate?: string) {
     await refreshTasks();
   }, [refreshTasks, tasks]);
 
+  const handleCompleteTask = useCallback(async (
+    id: string,
+    options?: { learnedContent?: string; mastery?: MasteryLevel }
+  ) => {
+    await completeTask(id, options || {});
+  }, []);
+
+
   return {
     tasks: filteredTasks,
     allTasks: tasks,
@@ -101,7 +110,7 @@ export function useTasks(initialDate?: string) {
     addTask,
     updateTask,
     deleteTask,
-    toggleComplete,
+    handleCompleteTask,
     refreshTasks,
   };
 }

@@ -7,14 +7,27 @@ import { EmptyState } from './EmptyState';
 import Link from 'next/link';
 import { CalendarDays, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 
+import { CompletedDialog } from './CompletedDialog';
+import { LearningContentDialog } from './LearningContentDialog';
+import { MasteryDialog } from './MasteryDialog';
+
 interface TaskListPageProps {
   initialDate?: string;
 }
 
 export function TaskListPage({ initialDate }: TaskListPageProps) {
-  const { tasks, selectedDate, setSelectedDate, toggleComplete } = useTasks(initialDate);
+  const { tasks, selectedDate, setSelectedDate, handleCompleteTask, refreshTasks } = useTasks(initialDate);
 
   const [today] = useState(() => new Date().toISOString().split('T')[0]);
+
+  // 弹窗状态
+  const [completedDialogOpen, setCompletedDialogOpen] = useState(false);
+  const [learningDialogOpen, setLearningDialogOpen] = useState(false);
+  const [masteryDialogOpen, setMasteryDialogOpen] = useState(false);
+  const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
+
+  const currentTask = tasks.find((t) => t.id === currentTaskId);
+
 
   // 日期切换
   const goToPrevDay = () => {
@@ -42,6 +55,52 @@ export function TaskListPage({ initialDate }: TaskListPageProps) {
     
     return label;
   }, [today]);
+
+  // 勾选复选框包装逻辑
+  const handleToggleComplete = useCallback((id: string) => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+
+    // 已完成 → 弹窗提示
+    if (task.completed) {
+      setCurrentTaskId(id);
+      setCompletedDialogOpen(true);
+      return;
+    }
+
+    // 复习任务 → 掌握程度弹窗
+    if (task.taskKind === 'learning_review') {
+      setCurrentTaskId(id);
+      setMasteryDialogOpen(true);
+      return;
+    }
+
+    // 学习任务 → 学习内容弹窗
+    if (task.isLearning) {
+      setCurrentTaskId(id);
+      setLearningDialogOpen(true);
+      return;
+    }
+
+    // 普通任务 → 直接完成
+    handleCompleteTask(id).then(() => refreshTasks());
+  }, [tasks, handleCompleteTask, refreshTasks]);
+
+  const handleLearningConfirm = (content: string) => {
+    if (currentTaskId) {
+      handleCompleteTask(currentTaskId, { learnedContent: content }).then(() => refreshTasks());
+    }
+    setLearningDialogOpen(false);
+    setCurrentTaskId(null);
+  };
+
+  const handleMasteryConfirm = (mastery: 'good' | 'fair' | 'poor') => {
+    if (currentTaskId) {
+      handleCompleteTask(currentTaskId, { mastery }).then(() => refreshTasks());
+    }
+    setMasteryDialogOpen(false);
+    setCurrentTaskId(null);
+  };
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-6">
@@ -87,7 +146,7 @@ export function TaskListPage({ initialDate }: TaskListPageProps) {
             <TaskItem
               key={task.id}
               task={task}
-              onToggleComplete={toggleComplete}
+              onToggleComplete={handleToggleComplete}
             />
           ))
         )}
@@ -100,6 +159,34 @@ export function TaskListPage({ initialDate }: TaskListPageProps) {
           添加新任务
         </button>
       </Link>
+
+      {/*弹窗组件*/}
+      <CompletedDialog
+        open={completedDialogOpen}
+        onClose={() => {
+          setCompletedDialogOpen(false);
+          setCurrentTaskId(null);
+        }}
+      />
+      <LearningContentDialog
+        open={learningDialogOpen}
+        onClose={() => {
+          setLearningDialogOpen(false);
+          setCurrentTaskId(null);
+        }}
+        onConfirm={handleLearningConfirm}
+        taskTitle={currentTask?.title || ''}
+      />
+      <MasteryDialog
+        open={masteryDialogOpen}
+        onClose={() => {
+          setMasteryDialogOpen(false);
+          setCurrentTaskId(null);
+        }}
+        onConfirm={handleMasteryConfirm}
+        taskTitle={currentTask?.title || ''}
+        learningContent={currentTask?.learningContent}
+      />
     </div>
   );
 }
