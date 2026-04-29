@@ -354,7 +354,7 @@ export async function completeTask(id: string, input: CompleteTaskInput): Promis
   }
 
   const completedAt = nowIso();
-  const completedAtDate = toDateOnly(completedAt);
+  const completionDate = task.dueDate;
 
   task.completed = true;
   task.completedAt = completedAt;
@@ -374,7 +374,7 @@ export async function completeTask(id: string, input: CompleteTaskInput): Promis
 
     const reviews = createReviewTasks({
       sourceTask: task,
-      completionDate: completedAtDate,
+      completionDate,
       learnedContent,
       mastery: input.mastery,
     });
@@ -397,7 +397,7 @@ export async function completeTask(id: string, input: CompleteTaskInput): Promis
       tasks: db.tasks,
       seriesId: task.seriesId,
       completedReviewStep: task.reviewStep ?? 1,
-      completedAtDate,
+      completedAtDate: completionDate,
       mastery: input.mastery,
     });
     result.adjustedReviews = changed;
