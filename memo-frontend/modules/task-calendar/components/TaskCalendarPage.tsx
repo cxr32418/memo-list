@@ -127,7 +127,7 @@ export function TaskCalendarPage() {
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/" className="text-sm text-gray-600 hover:text-gray-900">
-              返回任务列表
+              返回今日列表
             </Link>
             <span className="text-gray-300">|</span>
             <Link 
