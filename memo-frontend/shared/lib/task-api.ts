@@ -1,6 +1,7 @@
 import type { MasteryLevel, Task } from '@/shared/types/global';
+import { clearAuthSession, getAuthToken } from '@/shared/lib/auth-api';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
 
 type CreateTaskInput = Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'completed'>;
 type UpdateTaskInput = Partial<Omit<Task, 'id' | 'createdAt'>>;
@@ -11,15 +12,24 @@ interface CompleteTaskInput {
 }
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getAuthToken();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers || {}),
     },
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      clearAuthSession();
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login';
+      }
+    }
+
     const payload = await response.json().catch(() => ({}));
     const message = typeof payload?.error === 'string' ? payload.error : 'Request failed.';
     throw new Error(message);

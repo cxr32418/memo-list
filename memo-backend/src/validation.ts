@@ -39,3 +39,13 @@ export const completeTaskSchema = z.object({
   learnedContent: z.string().optional(),
   mastery: masteryLevelSchema.optional(),
 });
+
+export const registerSchema = z.object({
+  username: z.string().min(1),
+  password: z.string().min(6),
+});
+
+export const loginSchema = z.object({
+  username: z.string().min(1),
+  password: z.string().min(6),
+});

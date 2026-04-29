@@ -7,6 +7,9 @@ const DB_FILE = path.join(DATA_DIR, 'memory-curve-db.json');
 
 const EMPTY_DB: TaskDatabase = {
   tasks: [],
+  users: [],
+  loginRecords: [],
+  sessions: [],
 };
 
 export async function readDb(): Promise<TaskDatabase> {
@@ -15,6 +18,9 @@ export async function readDb(): Promise<TaskDatabase> {
     const parsed = JSON.parse(raw) as TaskDatabase;
     return {
       tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
+      users: Array.isArray(parsed.users) ? parsed.users : [],
+      loginRecords: Array.isArray(parsed.loginRecords) ? parsed.loginRecords : [],
+      sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
     };
   } catch {
     return EMPTY_DB;
