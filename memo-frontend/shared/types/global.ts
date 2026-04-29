@@ -3,6 +3,13 @@ export type SyncStatus = 'synced' | 'pending' | 'syncing' | 'failed';
 export type MasteryLevel = 'good' | 'fair' | 'poor';
 export type TaskKind = 'standard' | 'learning_source' | 'learning_review';
 
+export interface UserProfile {
+  id: string;
+  username: string;
+  createdAt: string;
+  lastLoginAt?: string;
+}
+
 export interface Task {
   id: string;                   // 本地 id
   // serverId?: string;            // 后端 id

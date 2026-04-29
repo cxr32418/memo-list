@@ -4,6 +4,7 @@ export type TaskKind = 'standard' | 'learning_source' | 'learning_review';
 
 export interface Task {
   id: string;
+  userId: string;
   title: string;
   frequency: TaskFrequency;
   reminderTime?: string | null;
@@ -24,6 +25,54 @@ export interface Task {
 
 export interface TaskDatabase {
   tasks: Task[];
+  users: User[];
+  loginRecords: LoginRecord[];
+  sessions: Session[];
+}
+
+export interface User {
+  id: string;
+  username: string;
+  passwordHash: string;
+  createdAt: string;
+  updatedAt: string;
+  lastLoginAt?: string;
+}
+
+export interface LoginRecord {
+  id: string;
+  userId: string;
+  username: string;
+  loggedInAt: string;
+}
+
+export interface Session {
+  token: string;
+  userId: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface RegisterInput {
+  username: string;
+  password: string;
+}
+
+export interface LoginInput {
+  username: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: PublicUser;
+}
+
+export interface PublicUser {
+  id: string;
+  username: string;
+  createdAt: string;
+  lastLoginAt?: string;
 }
 
 export interface CreateTaskInput {

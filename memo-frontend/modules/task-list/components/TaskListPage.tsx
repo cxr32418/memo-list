@@ -5,7 +5,9 @@ import { useTasks } from '../hooks/useTasks';
 import { TaskItem } from './TaskItem';
 import { EmptyState } from './EmptyState';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { CalendarDays, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { getCurrentUserFromStorage, logout } from '@/shared/lib/auth-api';
 
 import { CompletedDialog } from './CompletedDialog';
 import { LearningContentDialog } from './LearningContentDialog';
@@ -16,6 +18,7 @@ interface TaskListPageProps {
 }
 
 export function TaskListPage({ initialDate }: TaskListPageProps) {
+  const router = useRouter();
   const { tasks, selectedDate, setSelectedDate, handleCompleteTask, refreshTasks } = useTasks(initialDate);
 
   const [today] = useState(() => new Date().toISOString().split('T')[0]);
@@ -27,6 +30,7 @@ export function TaskListPage({ initialDate }: TaskListPageProps) {
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
 
   const currentTask = tasks.find((t) => t.id === currentTaskId);
+  const currentUser = getCurrentUserFromStorage();
 
 
   // 日期切换
@@ -104,6 +108,20 @@ export function TaskListPage({ initialDate }: TaskListPageProps) {
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-6">
+      <div className="mb-4 flex items-center justify-between">
+        <span className="text-xs text-gray-500">当前账号: {currentUser?.username || 'unknown'}</span>
+        <button
+          type="button"
+          className="rounded-md border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
+          onClick={async () => {
+            await logout();
+            router.replace('/login');
+          }}
+        >
+          退出登录
+        </button>
+      </div>
+
       {/* 日期切换 */}
       <div className="flex items-center justify-between mb-4">
         <button

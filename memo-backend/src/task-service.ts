@@ -109,13 +109,14 @@ function sortTasks(tasks: Task[]): Task[] {
 }
 
 export async function listTasks(filters?: {
+  userId: string;
   date?: string;
   from?: string;
   to?: string;
   includeCompleted?: boolean;
 }): Promise<Task[]> {
   const db = await readDb();
-  let tasks = sortTasks(db.tasks);
+  let tasks = sortTasks(db.tasks.filter((task) => task.userId === filters?.userId));
 
   if (filters?.date) {
     if (!isDateOnly(filters.date)) {
@@ -145,21 +146,22 @@ export async function listTasks(filters?: {
   return tasks;
 }
 
-export async function getTaskById(id: string): Promise<Task> {
+export async function getTaskById(userId: string, id: string): Promise<Task> {
   const db = await readDb();
-  const task = db.tasks.find((item) => item.id === id);
+  const task = db.tasks.find((item) => item.id === id && item.userId === userId);
   if (!task) {
     throw new NotFoundError('Task not found.');
   }
   return task;
 }
 
-export async function createTask(input: CreateTaskInput): Promise<Task> {
+export async function createTask(userId: string, input: CreateTaskInput): Promise<Task> {
   assertCreateInput(input);
 
   const now = nowIso();
   const newTask: Task = {
     id: newId(),
+    userId,
     title: input.title.trim(),
     frequency: input.frequency,
     reminderTime: input.reminderTime ?? null,
@@ -180,9 +182,9 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
   return newTask;
 }
 
-export async function updateTask(id: string, updates: UpdateTaskInput): Promise<Task> {
+export async function updateTask(userId: string, id: string, updates: UpdateTaskInput): Promise<Task> {
   const db = await readDb();
-  const index = db.tasks.findIndex((task) => task.id === id);
+  const index = db.tasks.findIndex((task) => task.id === id && task.userId === userId);
   if (index === -1) {
     throw new NotFoundError('Task not found.');
   }
@@ -219,10 +221,10 @@ export async function updateTask(id: string, updates: UpdateTaskInput): Promise<
   return next;
 }
 
-export async function deleteTask(id: string): Promise<void> {
+export async function deleteTask(userId: string, id: string): Promise<void> {
   const db = await readDb();
   const before = db.tasks.length;
-  db.tasks = db.tasks.filter((task) => task.id !== id);
+  db.tasks = db.tasks.filter((task) => !(task.id === id && task.userId === userId));
 
   if (db.tasks.length === before) {
     throw new NotFoundError('Task not found.');
@@ -249,6 +251,7 @@ function createReviewTasks(options: {
 
     const reviewTask: Task = {
       id: newId(),
+      userId: options.sourceTask.userId,
       title: `Review: ${options.sourceTask.title}`,
       frequency: 'once',
       reminderTime: options.sourceTask.reminderTime ?? null,
@@ -277,6 +280,7 @@ function createReviewTasks(options: {
 
 function adjustPendingReviews(options: {
   tasks: Task[];
+  userId: string;
   seriesId: string;
   completedReviewStep: number;
   completedAtDate: string;
@@ -285,6 +289,7 @@ function adjustPendingReviews(options: {
   const pending = options.tasks
     .filter((task) => {
       if (task.taskKind !== 'learning_review') return false;
+      if (task.userId !== options.userId) return false;
       if (task.seriesId !== options.seriesId) return false;
       if (task.completed) return false;
       return (task.reviewStep ?? 0) > options.completedReviewStep;
@@ -319,6 +324,7 @@ function buildRecurringSuccessor(task: Task): Task | undefined {
 
   return {
     id: newId(),
+    userId: task.userId,
     title: task.title,
     frequency: task.frequency,
     reminderTime: task.reminderTime ?? null,
@@ -333,9 +339,9 @@ function buildRecurringSuccessor(task: Task): Task | undefined {
   };
 }
 
-export async function completeTask(id: string, input: CompleteTaskInput): Promise<CompleteTaskResult> {
+export async function completeTask(userId: string, id: string, input: CompleteTaskInput): Promise<CompleteTaskResult> {
   const db = await readDb();
-  const task = db.tasks.find((item) => item.id === id);
+  const task = db.tasks.find((item) => item.id === id && item.userId === userId);
 
   if (!task) {
     throw new NotFoundError('Task not found.');
@@ -395,6 +401,7 @@ export async function completeTask(id: string, input: CompleteTaskInput): Promis
     task.mastery = input.mastery;
     const changed = adjustPendingReviews({
       tasks: db.tasks,
+      userId,
       seriesId: task.seriesId,
       completedReviewStep: task.reviewStep ?? 1,
       completedAtDate: completionDate,
